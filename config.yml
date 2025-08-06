@@ -1,0 +1,33 @@
+# LED Strip Configuration
+led_configuration:
+  # Physical layout
+  pixels_per_row: 22
+  number_of_rows: 2
+  total_pixels: 44
+
+  # Hardware settings
+  led_pin: 5
+  brightness: 50
+
+  # LED strip specifications
+  led_type: "WS2811"
+  color_order: "GRB"
+
+  # Optional settings
+  refresh_rate: 60  # Hz
+  max_current: 2000  # mA
+
+# WiFi Configuration
+wifi_configuration:
+  # Client mode settings (connect to existing network)
+  enable_client_mode: false
+  ssid: ""
+  password: ""
+
+  # Access Point settings (current hotspot mode)
+  ap_ssid: "ESP32-LED-Config"
+  ap_password: "ledconfig123"
+
+  # Connection settings
+  connection_timeout: 10000  # ms
+  max_retry_attempts: 3
