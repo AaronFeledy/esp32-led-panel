@@ -9,9 +9,12 @@ led_configuration:
   led_pin: 5
   brightness: 50
 
-  # LED strip specifications
+  # LED strip specifications (WS2811 hardware optimized)
   led_type: "WS2811"
   color_order: "GRB"
+
+  # Signal optimization
+  dummy_led: false  # Add dummy LED at start of strip for signal stability
 
   # Optional settings
   refresh_rate: 60  # Hz
@@ -28,6 +31,7 @@ wifi_configuration:
   ap_ssid: "ESP32-LED-Config"
   ap_password: "ledconfig123"
 
-  # Connection settings
+  # Network settings
+  hostname: "esp32-led"
   connection_timeout: 10000  # ms
   max_retry_attempts: 3

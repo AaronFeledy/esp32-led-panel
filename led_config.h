@@ -18,6 +18,7 @@ struct LEDConfig {
   String colorOrder = "GRB";
   int refreshRate = 60;
   int maxCurrent = 2000;
+  bool dummyLed = false;
 };
 
 struct WiFiConfig {
@@ -90,17 +91,32 @@ private:
       config.brightness = value.toInt();
       Serial.printf("brightness: %d\n", config.brightness);
     } else if (key.equals("led_type")) {
-      config.ledType = value;
-      Serial.printf("led_type: %s\n", value.c_str());
+      // Only accept WS2811 for hardware-optimized timing
+      if (value.equals("WS2811")) {
+        config.ledType = value;
+        Serial.printf("led_type: %s\n", value.c_str());
+      } else {
+        Serial.printf("⚠️  Unsupported LED type '%s', using WS2811\n", value.c_str());
+        config.ledType = "WS2811";
+      }
     } else if (key.equals("color_order")) {
-      config.colorOrder = value;
-      Serial.printf("color_order: %s\n", value.c_str());
+      // Only accept GRB for WS2811 hardware timing
+      if (value.equals("GRB")) {
+        config.colorOrder = value;
+        Serial.printf("color_order: %s\n", value.c_str());
+      } else {
+        Serial.printf("⚠️  Unsupported color order '%s', using GRB for WS2811\n", value.c_str());
+        config.colorOrder = "GRB";
+      }
     } else if (key.equals("refresh_rate")) {
       config.refreshRate = value.toInt();
       Serial.printf("refresh_rate: %d\n", config.refreshRate);
     } else if (key.equals("max_current")) {
       config.maxCurrent = value.toInt();
       Serial.printf("max_current: %d\n", config.maxCurrent);
+    } else if (key.equals("dummy_led")) {
+      config.dummyLed = value.equalsIgnoreCase("true");
+      Serial.printf("dummy_led: %s\n", config.dummyLed ? "true" : "false");
     } else if (key.equals("enable_client_mode")) {
       wifiConfig.enableClientMode = value.equalsIgnoreCase("true");
       Serial.printf("enable_client_mode: %s\n", wifiConfig.enableClientMode ? "true" : "false");
@@ -149,9 +165,19 @@ public:
 
     file.close();
 
-    // Validate total pixels calculation
-    if (config.totalPixels != config.pixelsPerRow * config.numberOfRows) {
-      config.totalPixels = config.pixelsPerRow * config.numberOfRows;
+    // Validate and adjust total pixels calculation for dummy LEDs
+    int expectedLogicalPixels = config.pixelsPerRow * config.numberOfRows;
+    int expectedPhysicalPixels = expectedLogicalPixels;
+
+    if (config.dummyLed) {
+      // Add one dummy LED at the very beginning of the strip
+      expectedPhysicalPixels = expectedLogicalPixels + 1;
+      Serial.printf("Dummy LED mode enabled: %d logical pixels + 1 dummy LED = %d physical pixels\n",
+                    expectedLogicalPixels, expectedPhysicalPixels);
+    }
+
+    if (config.totalPixels != expectedPhysicalPixels) {
+      config.totalPixels = expectedPhysicalPixels;
       Serial.printf("Corrected total_pixels to: %d\n", config.totalPixels);
     }
 

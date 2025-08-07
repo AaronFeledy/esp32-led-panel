@@ -1,6 +1,6 @@
 # ESP32-C6 LED Strip Controller
 
-Complete LED control system for ESP32-C6 with WS2811/WS2812 LED strips. Features web-based configuration, real-time effects, and persistent settings storage.
+Complete LED control system for ESP32-C6 with WS2811 LED strips. Features web-based configuration, real-time effects, and persistent settings storage. **Hardware-optimized exclusively for WS2811 timing using ESP32-C6 RMT peripheral.**
 
 ## 🚀 Quick Start
 
@@ -8,14 +8,14 @@ Complete LED control system for ESP32-C6 with WS2811/WS2812 LED strips. Features
 - ESP32-C6 development board
 - **Level shifter (TXS0102 recommended)** - CRITICAL!
 - 5V power supply (2A+ for 30 LEDs, 3A+ for 50 LEDs)
-- WS2811/WS2812 LED strip
+- WS2811 LED strip
 - Jumper wires
 
 ### Software Setup
 1. **Install Arduino IDE 2.x**
 2. **Add ESP32 support**: `https://espressif.github.io/arduino-esp32/package_esp32_dev_index.json`
 3. **Install ESP32 package v3.0.0+**
-4. **Install libraries**: Adafruit NeoPixel v1.15.1+, FastLED v3.10.2+
+4. **No external libraries required** - Uses built-in ESP32 RMT peripheral
 5. **Select board**: ESP32C6 Dev Module
 
 ### Upload and Connect
@@ -31,7 +31,7 @@ Complete LED control system for ESP32-C6 with WS2811/WS2812 LED strips. Features
 
 ## ⚡ Critical Wiring
 
-**⚠️ LEVEL SHIFTER REQUIRED!** ESP32-C6 outputs 3.3V but WS2811 needs 5V logic.
+**⚠️ LEVEL SHIFTER REQUIRED!** ESP32-C6 outputs 3.3V but WS2811 needs 5V logic (minimum 3.5V).
 
 ```
 ESP32-C6          Level Shifter       WS2811 Strip
@@ -51,12 +51,13 @@ GND       ────────► GND           ────► GND         
 - **Secure WiFi setup** - Password obfuscation for security
 - **Persistent settings** - All configurations saved to ESP32 SPIFFS storage
 
-### LED Effects (Auto-cycling)
-- **Moving pixels** - Colored dots traveling across strip
-- **Color fills** - Progressive color wipes
-- **Rainbow cycles** - HSV color wheel animation
-- **Row patterns** - 2D matrix effects for multi-row layouts
-- **Fire simulation** - Realistic flame animation
+### LED Effects (Manual Selection)
+- **Random Pulse** - Whole panel pulses with random colors each cycle (default)
+- **Moving Pixel** - Colored dots traveling across strip
+- **Color Fill** - Progressive color wipes
+- **Rainbow** - HSV color wheel animation
+- **Row Patterns** - 2D matrix effects for multi-row layouts
+- **Fire** - Realistic flame animation
 - **Breathing** - Smooth brightness pulsing
 
 ### Manual Controls
@@ -85,6 +86,7 @@ led_configuration:
   brightness: 50
   led_type: "WS2811"
   color_order: "GRB"
+  dummy_led: false  # Add dummy LED at start for signal stability
 
 wifi_configuration:
   enable_client_mode: false
@@ -145,15 +147,18 @@ When the ESP32 successfully connects to your WiFi network in client mode, it wil
 1. **Check level shifter** - Most common issue
 2. **Verify 5V power supply** - Use multimeter
 3. **Test connections** - Ensure solid ground connection
+4. **First LED issues** - Try enabling dummy LED option in configuration
 
 ### Wrong Colors
-- Change color order in web interface: GRB → RGB/BRG
-- Check level shifter output voltage
+- Color order is now fixed to GRB for WS2811 hardware optimization
+- Check level shifter output voltage (should be 5V)
+- Verify WS2811 strips are connected (not WS2812/WS2812B)
 
 ### LEDs Flicker/Random Colors
 - **Insufficient power supply** - Most likely cause
 - **Poor ground connections** - Ensure common ground
 - **Data signal issues** - Check level shifter operation
+- **First LED signal corruption** - Enable dummy LED buffer feature
 
 ### Upload Issues
 - **Hold BOOT button** while uploading
@@ -194,10 +199,11 @@ Partition Scheme: Default 4MB with spiffs
 ## 🎯 Expected Results
 
 **Working correctly:**
-- LEDs cycle through 6 different effects automatically
-- Web interface shows current configuration
-- Serial monitor (115200 baud) shows status messages
-- Effects can be toggled and controlled in real-time
+- LEDs display the selected effect (Random Pulse by default)
+- 7 different effects available for manual selection via web interface
+- Web interface shows current configuration and effect controls
+- Serial monitor (115200 baud) shows RMT initialization and status messages
+- Effects can be toggled and manually selected in real-time
 - Configuration changes persist after restart
 
 ## 📚 Advanced Usage
@@ -208,10 +214,20 @@ For 2D LED arrangements, the controller supports matrix addressing:
 - **Row patterns**: Special effects utilize 2D layout
 - **Configurable**: Adjust rows/columns via web interface
 
-### Dual Library Support
-- **NeoPixel**: Primary library, better ESP32-C6 compatibility
-- **FastLED**: Used for advanced effects (fire animation)
-- Automatic library selection based on effect
+### Dummy LED Buffer Feature
+Solves common first LED signal timing issues:
+- **What it does**: Adds one "dummy" LED at the very beginning of your strip that stays off
+- **When to use**: Enable if your first LED shows wrong colors, flickers, or doesn't respond
+- **How it works**: All your configured LEDs shift to positions 1-44 instead of 0-43
+- **Hardware requirement**: You'll need one extra LED (e.g., 45 total for a 44-LED configuration)
+- **Enable via**: Web interface checkbox "Enable Dummy LED Buffer" or set `dummy_led: true` in config
+- **Transparent**: All effects and controls work normally - the dummy LED is invisible to your patterns
+
+### Hardware RMT Implementation
+- **No external libraries**: Uses ESP32-C6 built-in RMT peripheral
+- **Hardware-accurate timing**: Immune to WiFi/interrupt interference
+- **WS2811 optimized**: Precise timing per datasheet specifications
+- **ESP32-C6 stability**: 10MHz clock = 100ns per tick for reduced jitter and improved reliability
 
 ### API Endpoints
 Access programmatically:
